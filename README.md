@@ -3,9 +3,9 @@
 [gitlab-ci-link]: https://gitlab.com/timvisee/update-proton-ge/pipelines
 [gitlab-ci-master-badge]: https://gitlab.com/timvisee/update-proton-ge/badges/master/pipeline.svg
 
-# Update Proton GloriousEggroll script
+# Update Proton GloriousEggroll script (sirkhancision fork)
 A script to update your [Proton GloriousEggroll][proton-ge] installation to the latest
-version, so you don't have to do it yourself.
+version, so you don't have to do it yourself. Mixed with some extra functionalites found in [Termuellinator's fork of ProtonUpdater](https://github.com/Termuellinator/ProtonUpdater).
 
 ## Usage
 Please refer to the Proton GloriousEggroll installation instructions first to
@@ -16,7 +16,7 @@ https://github.com/GloriousEggroll/proton-ge-custom#installation
 To use this script, download it first (and make it executable):
 
 ```bash
-wget https://gitlab.com/timvisee/update-proton-ge/-/raw/master/update-proton-ge
+wget https://raw.githubusercontent.com/sirkhancision/update-proton-ge/master/update-proton-ge
 chmod a+x ./update-proton-ge
 ```
 
