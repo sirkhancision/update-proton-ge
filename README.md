@@ -5,7 +5,7 @@
 
 # Update Proton GloriousEggroll script (sirkhancision fork)
 A script to update your [Proton GloriousEggroll][proton-ge] installation to the latest
-version, so you don't have to do it yourself. Mixed with some extra functionalites found in [Termuellinator's fork of ProtonUpdater](https://github.com/Termuellinator/ProtonUpdater).
+version, so you don't have to do it yourself. Mixed with some extra functionalites found in [Termuellinator's fork of ProtonUpdater](https://github.com/Termuellinator/ProtonUpdater) + some extra teaks by your's truly.
 
 ## Usage
 Please refer to the Proton GloriousEggroll installation instructions first to
@@ -25,13 +25,15 @@ Then run it to install the latest version of GloriousEggroll's Proton:
 ```bash
 ./update-proton-ge
 
-# Found latest version: 5.9-GE-8-ST
-# Downloading...
-# /tmp/Proton-5.9-GE-8-ST.t 100%[======>] 390,79M  4,11MB/s    in 2m 2s
-# Installing...
-# Cleanup...
-# Installation complete
+$ Found latest version: 5.9-GE-8-ST
+$ Do you want to try to download and (re)install this release? <y/n>
+# it downloads the release with curl and extracts it with bsdtar
+# etc...
 ```
+
+## Dependencies
+
+curl and bsdtar.
 
 ## License
 This project is released under the MIT license.
