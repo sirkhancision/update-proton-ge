@@ -28,10 +28,22 @@ Then run it to install the latest version of GloriousEggroll's Proton:
 ```bash
 ./update-proton-ge
 
-$ Found latest version: 5.9-GE-8-ST
-$ Do you want to try to download and (re)install this release? <y/n>
-# it downloads the release with curl and extracts it with bsdtar
-# etc...
+$ Found latest version: 6.10-GE-1
+$ Do you want to try to download and (re)install this release? <y/n> y
+$   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+$                                  Dload  Upload   Total   Spent    Left  Speed
+$ 100   631  100   631    0     0   1091      0 --:--:-- --:--:-- --:--:--  1089
+$ 100  370M  100  370M    0     0  2246k      0  0:02:48  0:02:48 --:--:-- 2288k
+$ Do you want to delete intalled versions? <y/n> y
+$ Installed runners:
+$ 1. Proton-6.10-GE-1
+$ 2. Proton-6.9-GE-2
+$
+$ Please choose an option to remove [1-2]:2
+$ removing $HOME/.steam/steam/compatibilitytools.d/Proton-6.9-GE-2/
+$ Do you really want to permanently delete this version? <y/n> y
+$ Removed $HOME/.steam/steam/compatibilitytools.d/Proton-6.9-GE-2/
+$ Installation complete, at: $HOME/.steam/steam/compatibilitytools.d/Proton-6.10-GE-1
 ```
 
 ## Dependencies

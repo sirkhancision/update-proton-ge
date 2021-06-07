@@ -55,7 +55,7 @@ InstallProtonGE() {
 # Check if there are other Proton versions installed
 # If so, asks if you want to delete any
 Wanttodelete() {
-  if [[ find "$PROTON_DIR" -path $PROTON_DIR/Proton-$version -prune -o -type d -name '*Proton*' -quit ]]; then
+  if [[ $(find "$PROTON_DIR" -path $PROTON_DIR/Proton-$version -prune -o -type d -name '*Proton*' -quit) ]]; then
     read -r -p "Do you want to delete intalled versions? <y/n> " prompt
     if [[ $prompt == "y" || $prompt == "Y" || $prompt == "yes" || $prompt == "Yes" ]]; then
       DeleteProtonCheck
