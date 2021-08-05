@@ -16,128 +16,126 @@ version=${release_url##*/}
 echo Found latest version: $version
 
 # Determine download URL and install path
-download_url=https://github.com/GloriousEggroll/proton-ge-custom/releases/download/$version/Proton-$version.tar.gz
+download_url=$REPO/releases/download/$version/Proton-$version.tar.gz
 install_dir=$PROTON_DIR/Proton-$version
 
 # Exit if already installed
 if [ -d $install_dir ]; then
-  echo Already installed at: $install_dir
-  exit
+	echo Already installed at: $install_dir
+	exit
 fi
 
 # Functions
 
 # (In case autoinstall if off) Asks if you want to download/install the newest release
 InstallationPrompt() {
-  if [ "$autoInstall" = true ]; then
-    if [ ! -d "$PROTON_DIR"/Proton-"$version" ]; then
-      InstallProtonGE
-    fi
-  else
-    read -r -p "Do you want to try to download and (re)install this release? <y/n> " prompt
-    if [[ $prompt == "y" || $prompt == "Y" || $prompt == "yes" || $prompt == "Yes" ]]; then
-      InstallProtonGE
-      Wanttodelete
-    else
-      echo "Operation canceled"
-      Wanttodelete
-    fi
-  fi
+	if [ "$autoInstall" = true ]; then
+		if [ ! -d "$PROTON_DIR"/Proton-"$version" ]; then
+			InstallProtonGE
+		fi
+	else
+		read -r -p "Do you want to try to download and (re)install this release? <y/n> " prompt
+		if [[ $prompt == "y" || $prompt == "Y" || $prompt == "yes" || $prompt == "Yes" ]]; then
+			InstallProtonGE
+			Wanttodelete
+		else
+			echo "Operation canceled"
+			Wanttodelete
+		fi
+	fi
 }
 
 # If compatibilitytoolds.d directory doesn't exist under steam, it is created
 # Use curl and bsdtar to download and extract release to Steam's Proton directory
 InstallProtonGE() {
-  if [[ ! -d "$PROTON_DIR" ]]; then mkdir -p $PROTON_DIR; fi
-  curl -Lo /dev/stdout $download_url | bsdtar -xf /dev/stdin --directory $PROTON_DIR
+	if [[ ! -d "$PROTON_DIR" ]]; then mkdir -p $PROTON_DIR; fi
+	curl -Lo /dev/stdout $download_url | bsdtar -xf /dev/stdin --directory $PROTON_DIR
 }
 
 # Check if there are other Proton versions installed
 # If so, asks if you want to delete any
 Wanttodelete() {
-  if [[ $(find "$PROTON_DIR" -path $PROTON_DIR/Proton-$version -prune -o -type d -name '*Proton*' -quit) ]]; then
-    read -r -p "Do you want to delete intalled versions? <y/n> " prompt
-    if [[ $prompt == "y" || $prompt == "Y" || $prompt == "yes" || $prompt == "Yes" ]]; then
-      DeleteProtonCheck
-    else
-      RestartSteamCheck
-    fi
-  fi
+	read -r -p "Do you want to delete intalled versions? <y/n> " prompt
+	if [[ $prompt == "y" || $prompt == "Y" || $prompt == "yes" || $prompt == "Yes" ]]; then
+		DeleteProtonCheck
+	else
+		RestartSteamCheck
+	fi
 }
 
 # Show which versions are installed, then asks which you want to delete
 DeleteProtonCheck() {
-  echo "Installed runners:"
-  installed_versions=($(ls -d "$PROTON_DIR"/*/))
-  for((i=0;i<${#installed_versions[@]};i++)); do
-    inumber=$(("$i" + 1))
-    folder=$(echo "${installed_versions[i]}" | rev | cut -d/ -f2 | rev)
-    echo "$inumber. $folder"
-  done
-  echo ""
-  echo -n "Please choose an option to remove [1-${#installed_versions[@]}]:"
-  read -ra option_remove
+	echo "Installed runners:"
+	installed_versions=($(ls -d "$PROTON_DIR"/*/))
+	for((i=0;i<${#installed_versions[@]};i++)); do
+		inumber=$(("$i" + 1))
+		folder=$(echo "${installed_versions[i]}" | rev | cut -d/ -f2 | rev)
+		echo "$inumber. $folder"
+	done
+	echo ""
+	echo -n "Please choose an option to remove [1-${#installed_versions[@]}]:"
+	read -ra option_remove
 
-  case "$option_remove" in
-    [1-9])
-      if (( $option_remove <= ${#installed_versions[@]} )); then
-        remove_option=${installed_versions[$option_remove -1]}
-        echo "removing $remove_option"
-        DeleteProtonPrompt
-      else
-        echo "That is not a valid option"
-      fi
-      ;;
-    *)
-      echo "Not a valid option"
-      ;;
-  esac
+	case "$option_remove" in
+	[1-9])
+	if (( $option_remove <= ${#installed_versions[@]} )); then
+		remove_option=${installed_versions[$option_remove -1]}
+		echo "removing $remove_option"
+		DeleteProtonPrompt
+	else
+		echo "That is not a valid option"
+	fi
+	;;
+	*)
+	echo "Not a valid option"
+	;;
+	esac
 }
 
 # Confirmation for version deletion
 DeleteProtonPrompt() {
-  read -r -p "Do you really want to permanently delete this version? <y/n> " prompt
-  if [[ $prompt == "y" || $prompt == "Y" || $prompt == "yes" || $prompt == "Yes" ]]; then
-    DeleteProton
-  else
-    echo "Operation canceled"
-    Wanttodelete
-  fi
+	read -r -p "Do you really want to permanently delete this version? <y/n> " prompt
+	if [[ $prompt == "y" || $prompt == "Y" || $prompt == "yes" || $prompt == "Yes" ]]; then
+		DeleteProton
+	else
+		echo "Operation canceled"
+		Wanttodelete
+	fi
 }
 
 # Actually deleting the damn thing
 DeleteProton() {
-  rm -rf $remove_option
-  echo "Removed $remove_option"
-  installComplete=true
-  Wanttodelete
+	rm -rf $remove_option
+	echo "Removed $remove_option"
+	installComplete=true
+	Wanttodelete
 }
 
 # Checks if Steam is running and asks if you want to restart it
 RestartSteamCheck() {
-  if [ "$( pgrep steam )" != "" ] && [ "$installComplete" = true ]; then
-    if [ $restartSteam == 2 ]; then
-      read -r -p "Do you want to restart Steam? <y/n> " prompt
-      if [[ $prompt == "y" || $prompt == "Y" || $prompt == "yes" || $prompt == "Yes" ]]; then
-        RestartSteam
-      else
-        exit 2
-      fi
-    elif [ $restartSteam == 0 ]; then
-      exit 0
-    fi
-    RestartSteam
-  fi
+	if [ "$( pgrep steam )" != "" ] && [ "$installComplete" = true ]; then
+		if [ $restartSteam == 2 ]; then
+			read -r -p "Do you want to restart Steam? <y/n> " prompt
+			if [[ $prompt == "y" || $prompt == "Y" || $prompt == "yes" || $prompt == "Yes" ]]; then
+				RestartSteam
+			else
+				exit 2
+			fi
+		elif [ $restartSteam == 0 ]; then
+			exit 0
+		fi
+		RestartSteam
+	fi
 }
 
 # Actually restarts Steam
 RestartSteam() {
-  if [ "$( pgrep steam )" != "" ]; then
-    echo "Restarting Steam"
-    pkill -TERM steam # restarting Steam
-    sleep 5s
-    nohup steam </dev/null &>/dev/null &
-  fi
+	if [ "$( pgrep steam )" != "" ]; then
+		echo "Restarting Steam"
+		pkill -TERM steam # restarting Steam
+		sleep 5s
+		nohup steam </dev/null &>/dev/null &
+	fi
 }
 
 # The first thing that runs in the actual script (ironically)
