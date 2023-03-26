@@ -1,145 +1,86 @@
-#!/bin/sh
-
-# Stop on error
-set -e
+#!/bin/bash
 
 # Constants
 REPO=https://github.com/GloriousEggroll/proton-ge-custom
-LATEST_RELEASE_URL=$REPO/releases/latest
-PROTON_DIR=~/.steam/steam/compatibilitytools.d
-restartSteam=2
-autoInstall=false
+LATEST_RELEASE_URL="$REPO/releases/latest"
+PROTON_DIR="$HOME/.steam/steam/compatibilitytools.d"
 
 # Find latest version tag
-release_url=$(curl -Ls -o /dev/null -w %{url_effective} $LATEST_RELEASE_URL)
-version=${release_url##*/}
-echo Found latest version: $version
+RELEASE_URL="$(curl -Ls -o /dev/null -w %'{url_effective}' $LATEST_RELEASE_URL)"
+VERSION=${RELEASE_URL##*/}
+echo "Found latest version: $VERSION"
 
 # Determine download URL and install path
-download_url=$REPO/releases/download/$version/Proton-$version.tar.gz
-install_dir=$PROTON_DIR/Proton-$version
-
-# Exit if already installed
-if [ -d $install_dir ]; then
-	echo Already installed at: $install_dir
-	exit
-fi
-
-# Functions
-
-# (In case autoinstall if off) Asks if you want to download/install the newest release
-InstallationPrompt() {
-	if [ "$autoInstall" = true ]; then
-		if [ ! -d "$PROTON_DIR"/Proton-"$version" ]; then
-			InstallProtonGE
-		fi
-	else
-		read -r -p "Do you want to try to download and (re)install this release? <y/n> " prompt
-		if [[ $prompt == "y" || $prompt == "Y" || $prompt == "yes" || $prompt == "Yes" ]]; then
-			InstallProtonGE
-			Wanttodelete
-		else
-			echo "Operation canceled"
-			Wanttodelete
-		fi
-	fi
-}
-
-# If compatibilitytoolds.d directory doesn't exist under steam, it is created
-# Use curl and bsdtar to download and extract release to Steam's Proton directory
-InstallProtonGE() {
-	if [[ ! -d "$PROTON_DIR" ]]; then mkdir -p $PROTON_DIR; fi
-	curl -Lo /dev/stdout $download_url | bsdtar -xf /dev/stdin --directory $PROTON_DIR
-}
+DOWNLOAD_URL="$REPO/releases/download/$VERSION/$VERSION.tar.gz"
+INSTALL_DIR="$PROTON_DIR/$VERSION"
 
 # Check if there are other Proton versions installed
 # If so, asks if you want to delete any
-Wanttodelete() {
-	read -r -p "Do you want to delete intalled versions? <y/n> " prompt
-	if [[ $prompt == "y" || $prompt == "Y" || $prompt == "yes" || $prompt == "Yes" ]]; then
-		DeleteProtonCheck
-	else
-		RestartSteamCheck
+DeletePrompt() {
+	# if there aren't any subdirs, do nothing
+	if [ "$(find "$PROTON_DIR" -maxdepth 1 -type d | wc -l)" -gt 1 ]; then
+		read -rp "Do you want to delete installed versions? <y/n> " USER_RESPONSE
+		if [[ $USER_RESPONSE =~ ^[Yy]$ ]]; then
+			DeleteProtonCheck
+		fi
 	fi
 }
 
 # Show which versions are installed, then asks which you want to delete
 DeleteProtonCheck() {
 	echo "Installed runners:"
-	installed_versions=($(ls -d "$PROTON_DIR"/*/))
-	for((i=0;i<${#installed_versions[@]};i++)); do
-		inumber=$(("$i" + 1))
-		folder=$(echo "${installed_versions[i]}" | rev | cut -d/ -f2 | rev)
-		echo "$inumber. $folder"
-	done
-	echo ""
-	echo -n "Please choose an option to remove [1-${#installed_versions[@]}]:"
-	read -ra option_remove
+	mapfile -t INSTALLED_VERSIONS < <(ls -d "$PROTON_DIR"/*/)
 
-	case "$option_remove" in
+	for ((i = 0; i < ${#INSTALLED_VERSIONS[@]}; i++)); do
+		INUMBER=$(("$i" + 1))
+		FOLDER=$(echo "${INSTALLED_VERSIONS[i]}" | rev | cut -d/ -f2 | rev)
+		echo "$INUMBER. $FOLDER"
+	done
+
+	echo ""
+	echo -n "Please choose an option to remove [1-${#INSTALLED_VERSIONS[@]}]:"
+	read -ra OPTION_REMOVE
+
+	case "${OPTION_REMOVE[@]}" in
 	[1-9])
-	if (( $option_remove <= ${#installed_versions[@]} )); then
-		remove_option=${installed_versions[$option_remove -1]}
-		echo "removing $remove_option"
-		DeleteProtonPrompt
-	else
-		echo "That is not a valid option"
-	fi
-	;;
+		if ((OPTION_REMOVE <= ${#INSTALLED_VERSIONS[@]})); then
+			REMOVE_OPTION=${INSTALLED_VERSIONS[OPTION_REMOVE - 1]}
+			read -rp "Do you really want to permanently delete $(basename "$REMOVE_OPTION")? <y/n> " USER_RESPONSE
+			if [[ $USER_RESPONSE =~ ^[Yy]$ ]]; then
+				rm -rf "$REMOVE_OPTION"
+				echo "Removed $(basename "$REMOVE_OPTION")"
+			else
+				echo "No version was removed"
+				DeletePrompt
+			fi
+		else
+			echo "That is not a valid option"
+		fi
+		;;
 	*)
-	echo "Not a valid option"
-	;;
+		echo "Not a valid option"
+		;;
 	esac
 }
 
-# Confirmation for version deletion
-DeleteProtonPrompt() {
-	read -r -p "Do you really want to permanently delete this version? <y/n> " prompt
-	if [[ $prompt == "y" || $prompt == "Y" || $prompt == "yes" || $prompt == "Yes" ]]; then
-		DeleteProton
-	else
-		echo "Operation canceled"
-		Wanttodelete
-	fi
-}
+# If compatibilitytoolds.d directory doesn't exist under steam, create it
+if [ ! -d "$PROTON_DIR" ]; then
+	mkdir -p "$PROTON_DIR"
+fi
 
-# Actually deleting the damn thing
-DeleteProton() {
-	rm -rf $remove_option
-	echo "Removed $remove_option"
-	installComplete=true
-	Wanttodelete
-}
+# checks if there are any versions installed
+if [ -d "$INSTALL_DIR" ]; then
+	echo "Already installed at: $INSTALL_DIR"
+fi
 
-# Checks if Steam is running and asks if you want to restart it
-RestartSteamCheck() {
-	if [ "$( pgrep steam )" != "" ] && [ "$installComplete" = true ]; then
-		if [ $restartSteam == 2 ]; then
-			read -r -p "Do you want to restart Steam? <y/n> " prompt
-			if [[ $prompt == "y" || $prompt == "Y" || $prompt == "yes" || $prompt == "Yes" ]]; then
-				RestartSteam
-			else
-				exit 2
-			fi
-		elif [ $restartSteam == 0 ]; then
-			exit 0
-		fi
-		RestartSteam
-	fi
-}
-
-# Actually restarts Steam
-RestartSteam() {
-	if [ "$( pgrep steam )" != "" ]; then
-		echo "Restarting Steam"
-		pkill -TERM steam # restarting Steam
-		sleep 5s
-		nohup steam </dev/null &>/dev/null &
-	fi
-}
-
-# The first thing that runs in the actual script (ironically)
-InstallationPrompt
-
-# When installation is actually done
-echo Installation complete, at: $install_dir
+read -rp "Do you want to try to download and (re)install this release? <y/n> " USER_RESPONSE
+if [[ $USER_RESPONSE =~ ^[Yy]$ ]]; then
+	# Download and extract the release to Steam's Proton directory
+	echo "Downloading $VERSION..."
+	curl -Lo /dev/stdout "$DOWNLOAD_URL" | bsdtar -xf /dev/stdin --directory "$PROTON_DIR"
+	echo "$VERSION has been installed to $INSTALL_DIR."
+	DeletePrompt
+else
+	echo "Installation canceled"
+	DeletePrompt
+fi
